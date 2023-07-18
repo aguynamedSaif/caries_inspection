@@ -1,0 +1,6 @@
+"0","# Convert values in the train dataset"
+"0","train_data$kns <- ifelse(train_data$kns == 2, 0, 1)"
+"0",""
+"0","# Convert values in the test dataset"
+"0","test_data$kns <- ifelse(test_data$kns == 2, 0, 1)"
+"0",""

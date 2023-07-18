@@ -1,0 +1,255 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+we are going to load a .sav file with the following variables
+HEIGHT: height of respondent
+CARIES: No of caries
+INCOME: Household income
+P31.2: Do you drink Ribenna everyday?
+P31.6: Do you drink milk tea with sugar every day?
+P31.8: Do you drink coffee with sugar everyday?
+ASCORE: score of attitude towards dental caries prevention
+PSCORE: Score of practise towards dental caries prevention
+kns: Knowledge score towards dental caries prevention
+
+let us first load the data 
+```{r}
+library(haven)
+data = read_sav("CASE2.sav")
+```
+from the data viewed, we can conclude the following 
+the following variables should be numerical: 
+HEIGHT (float)
+CARIES (integer)
+INCOME (float)
+ASCORE (integer)
+PSCORE (integer)
+the following variables are categorical:
+P31.2 , P31.6, P31.8 and kns
+```{r}
+library(dplyr)
+
+data <- data %>%
+  mutate(HEIGHT = as.numeric(HEIGHT),
+         CARIES = as.integer(CARIES),
+         INCOME = as.numeric(INCOME),
+         ASCORE = as.integer(ASCORE),
+         PSCORE = as.integer(PSCORE),
+         P31.2 = as.factor(P31.2),
+         P31.6 = as.factor(P31.6),
+         P31.8 = as.factor(P31.8),
+         kns = as.factor(kns))
+
+```
+To perform an ANOVA (Analysis of Variance) to assess the relationship between the dependent variable kns and each independent variable, you can use the aov() function in R
+```{r}
+# Perform ANOVA for each variable
+anova_results <- lapply(data[, c("HEIGHT", "CARIES", "INCOME", "ASCORE", "PSCORE", "P31.2", "P31.6", "P31.8")], function(x) {
+  aov_result <- aov(kns ~ x, data = data)
+  return(summary(aov_result))
+})
+
+# Print the ANOVA results
+for (i in 1:length(anova_results)) {
+  variable <- names(anova_results[i])
+  print(paste("Variable:", variable))
+  print(anova_results[[i]])
+  cat("\n")
+}
+
+```
+The values obtained from ANOVA analysis include:
+
+1. Df (Degrees of Freedom): The degrees of freedom represent the number of independent pieces of information available to estimate a parameter or calculate a statistical test. In ANOVA, it refers to the degrees of freedom associated with the sum of squares and mean squares.
+
+2. Sum Sq (Sum of Squares): Sum of squares measures the variation or variability in the data. It represents the sum of squared deviations of the observed values from their mean.
+
+3. Mean Sq (Mean Square): Mean square is the sum of squares divided by the degrees of freedom. It represents the average squared deviation and provides an estimate of the variance.
+
+4. F value: The F value is the test statistic used in ANOVA. It measures the ratio of the between-group variability to the within-group variability. A higher F value suggests more significant differences between groups.
+
+5. Pr(>F) (p-value): The p-value is the probability of observing a test statistic as extreme as the one calculated from the sample data, assuming the null hypothesis is true. In ANOVA, the p-value represents the probability of obtaining the observed F value or a more extreme F value if there were no true differences between groups. A p-value below a chosen significance level (e.g., 0.05) suggests that there is evidence to reject the null hypothesis and conclude that there are significant differences between groups.
+
+In summary, ANOVA analyzes the variation between groups (Sum Sq), compares it to the variation within groups (Mean Sq), and calculates the F value and p-value to determine if there are significant differences between the groups.
+
+It's important to interpret the results in the context of your specific study and consider the research question and hypotheses. A significant F value (small p-value) indicates that at least one of the group means is different from the others, but additional post-hoc tests may be required to identify which specific groups differ significantly.
+
+to make a model, let us first split the data
+```{r}
+# Assuming your data frame is named "data"
+# Adjust the column names accordingly if needed
+
+library(caret)
+
+# Set the seed for reproducibility
+set.seed(123)
+
+# Split the data into training and test sets
+train_indices <- createDataPartition(data$kns, p = 0.8, list = FALSE)
+train_data <- data[train_indices, ]
+test_data <- data[-train_indices, ]
+
+
+```
+we need to convert the data a bit to make kns work for logistic regression
+```{r}
+# Convert values in the train dataset
+train_data$kns <- ifelse(train_data$kns == 2, 0, 1)
+
+# Convert values in the test dataset
+test_data$kns <- ifelse(test_data$kns == 2, 0, 1)
+
+```
+
+we build a logistic regression model with kns as the dependent variable and all the other variables as independent variables, you can use the glm() function in R. Here's an example of how you can create the logistic regression model using the training data and evaluate it on the test data:
+```{r}
+# Assuming you have the train_data and test_data data frames
+# Adjust the column names accordingly if needed
+
+# Build the logistic regression model
+logistic_model <- glm(kns ~ ., data = train_data, family = binomial)
+
+# Make predictions using the logistic regression model on the test data
+predicted_probs <- predict(logistic_model, newdata = test_data, type = "response")
+
+# Convert predicted probabilities to predicted classes (0 or 1)
+predicted_classes <- ifelse(predicted_probs > 0.5, 1, 0)
+
+# Create a data frame to store the predicted values and actual values
+comparison <- data.frame(Actual_kns = test_data$kns, Predicted_kns = predicted_classes)
+
+# Print the comparison
+print(comparison)
+
+# Calculate accuracy
+accuracy <- sum(comparison$Actual_kns == comparison$Predicted_kns) / nrow(comparison)
+
+# Calculate RMS
+rms <- sqrt(mean((comparison$Actual_kns - comparison$Predicted_kns)^2))
+
+# Print accuracy and RMS
+print(paste("Accuracy:", accuracy))
+print(paste("RMS:", rms))
+```
+the accuracy found is very high but lets see if we can improve on it, this time we would choose the 5 variables that have a higher F-value
+height, caries, ascore, pscore, p31.8
+
+```{r}
+# Assuming you have the train_data and test_data data frames
+# Adjust the column names accordingly if needed
+
+# Build the logistic regression model with selected variables
+logistic_model <- glm(kns ~ HEIGHT + CARIES + ASCORE + PSCORE + P31.8, data = train_data, family = binomial)
+
+# Make predictions using the logistic regression model on the test data
+predicted_probs <- predict(logistic_model, newdata = test_data, type = "response")
+
+# Convert predicted probabilities to predicted classes (0 or 1)
+predicted_classes <- ifelse(predicted_probs > 0.5, 1, 0)
+
+# Create a data frame to store the predicted values and actual values
+comparison <- data.frame(Actual_kns = test_data$kns, Predicted_kns = predicted_classes)
+
+# Calculate accuracy
+accuracy <- sum(comparison$Actual_kns == comparison$Predicted_kns) / nrow(comparison)
+
+# Calculate RMS
+rms <- sqrt(mean((comparison$Actual_kns - comparison$Predicted_kns)^2))
+
+# Print accuracy and RMS
+print(paste("Accuracy:", accuracy))
+print(paste("RMS:", rms))
+
+```
+the accuracy now has significantly increased
+```{r}
+# Assuming you have the train_data and test_data data frames
+# Adjust the column names accordingly if needed
+
+# Convert input variables to numeric in train_data
+train_data[, c("HEIGHT", "CARIES", "INCOME", "ASCORE", "PSCORE", "P31.2", "P31.6", "P31.8")] <- lapply(train_data[, c("HEIGHT", "CARIES", "INCOME", "ASCORE", "PSCORE", "P31.2", "P31.6", "P31.8")], as.numeric)
+
+# Convert input variables to numeric in test_data
+test_data[, c("HEIGHT", "CARIES", "INCOME", "ASCORE", "PSCORE", "P31.2", "P31.6", "P31.8")] <- lapply(test_data[, c("HEIGHT", "CARIES", "INCOME", "ASCORE", "PSCORE", "P31.2", "P31.6", "P31.8")], as.numeric)
+
+# Now you can proceed with the neural network code
+# ...
+
+library(neuralnet)
+
+# Combine the scaled predictors and the target variable in the training data
+train_data_combined <- cbind(train_data[, -which(names(train_data) == "kns")], kns = train_data$kns)
+
+# Build the neural network model
+neural_model <- neuralnet(kns ~ ., data = train_data_combined, hidden = c(5, 3), linear.output = FALSE)
+
+# Make predictions using the neural network model on the test data
+predicted_probs <- compute(neural_model, test_data[, -which(names(test_data) == "kns")])$net.result
+
+# Convert predicted probabilities to predicted classes (0 or 1)
+predicted_classes <- ifelse(predicted_probs > 0.5, 1, 0)
+
+# Create a data frame to store the predicted values and actual values
+comparison <- data.frame(Actual_kns = test_data$kns, Predicted_kns = predicted_classes)
+
+# Calculate accuracy
+accuracy_nn <- sum(comparison$Actual_kns == comparison$Predicted_kns) / nrow(comparison)
+
+# Calculate RMS
+rms_nn <- sqrt(mean((comparison$Actual_kns - comparison$Predicted_kns)^2))
+
+# Print accuracy and RMS
+print(paste("Accuracy:", accuracy_nn))
+print(paste("RMS:", rms_nn))
+
+```
+the logistic regression model with the variables with the highest F-values and the neural net model gives the same accuracy value
+
+let us now try build the neural net with the variables of highest F-values as mentioned before
+
+
+```{r}
+# Assuming you have the train_data and test_data data frames
+# Adjust the column names accordingly if needed
+
+library(neuralnet)
+
+# Combine the scaled predictors and the target variable in the training data
+train_data_combined <- cbind(train_data[, c("HEIGHT", "CARIES", "ASCORE", "PSCORE", "P31.8")], kns = train_data$kns)
+
+# Build the neural network model
+neural_model <- neuralnet(kns ~ HEIGHT + CARIES + ASCORE + PSCORE + P31.8, data = train_data_combined, hidden = c(5, 3), linear.output = FALSE)
+
+# Make predictions using the neural network model on the test data
+predicted_probs <- compute(neural_model, test_data[, c("HEIGHT", "CARIES", "ASCORE", "PSCORE", "P31.8")])$net.result
+
+# Convert predicted probabilities to predicted classes (0 or 1)
+predicted_classes <- ifelse(predicted_probs > 0.5, 1, 0)
+
+# Create a data frame to store the predicted values and actual values
+comparison <- data.frame(Actual_kns = test_data$kns, Predicted_kns = predicted_classes)
+
+# Calculate accuracy
+accuracy <- sum(comparison$Actual_kns == comparison$Predicted_kns) / nrow(comparison)
+
+# Calculate RMS
+rms <- sqrt(mean((comparison$Actual_kns - comparison$Predicted_kns)^2))
+
+# Print accuracy and RMS
+print(paste("Accuracy:", accuracy))
+print(paste("RMS:", rms))
+
+```
+
+we can see a drop in the accuracy value, because anova does not affect neural network decisions, neural network is more related accurate when we have more input variables to train the parameters
+```
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

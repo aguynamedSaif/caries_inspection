@@ -1,0 +1,22 @@
+"0","# Assuming your data frame is named ""data"""
+"0","# Adjust the column names accordingly if needed"
+"0",""
+"0","library(caret)"
+"2","Warning: package ‘caret’ was built under R version 4.3.1"
+"2","Loading required package: ggplot2
+"
+"2","Warning: package ‘ggplot2’ was built under R version 4.3.1"
+"2","Loading required package: lattice
+"
+"2","Registered S3 method overwritten by 'data.table':
+  method           from
+  print.data.table     
+"
+"0","# Set the seed for reproducibility"
+"0","set.seed(123)"
+"0",""
+"0","# Split the data into training and test sets"
+"0","train_indices <- createDataPartition(data$kns, p = 0.8, list = FALSE)"
+"0","train_data <- data[train_indices, ]"
+"0","test_data <- data[-train_indices, ]"
+"0",""

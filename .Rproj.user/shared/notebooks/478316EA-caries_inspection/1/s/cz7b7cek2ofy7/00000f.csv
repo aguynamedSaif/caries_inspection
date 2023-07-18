@@ -1,0 +1,26 @@
+"0","library(dplyr)"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"0","data <- data %>%"
+"0","  mutate(HEIGHT = as.numeric(HEIGHT),"
+"0","         CARIES = as.integer(CARIES),"
+"0","         INCOME = as.numeric(INCOME),"
+"0","         ASCORE = as.integer(ASCORE),"
+"0","         PSCORE = as.integer(PSCORE),"
+"0","         P31.2 = as.factor(P31.2),"
+"0","         P31.6 = as.factor(P31.6),"
+"0","         P31.8 = as.factor(P31.8),"
+"0","         kns = as.factor(kns))"
+"0",""
