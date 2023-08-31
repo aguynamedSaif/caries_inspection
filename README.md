@@ -20,16 +20,11 @@ Model evaluation: The models are evaluated using the accuracy metric.
 The results show that the logistic regression model has a higher accuracy than the neural network model.
 
 Instructions
-To run the project, you will need to install the following Python libraries:
-
-NumPy
-Pandas
-Scikit-learn
-TensorFlow
+To run the project, you will need to have Rstudios
 Once you have installed the required libraries, you can run the project by following these steps:
 
 Clone the repository to your local machine.
-Open the Caries_Prediction_Model.ipynb notebook in Jupyter Notebook.
+Open the caries_inspection.Rmd notebook in R Notebook.
 Run the cells in the notebook.
 Results
 The results of the project are shown in the caries_inspection.Rmd notebook. The notebook includes the following:
